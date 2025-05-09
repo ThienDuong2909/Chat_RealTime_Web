@@ -60,8 +60,8 @@ const verifyEmailWithKickbox = async (email) => {
     });
   });
 };
-const generateRandomToken = () => {
-  return crypto.randomBytes(30).toString("hex");
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 export const signup = async (req, res) => {
   console.log("Request body:", req.body);
@@ -96,17 +96,17 @@ export const signup = async (req, res) => {
         .send();
     }
 
-    const emailVerification = await verifyEmailWithKickbox(email);
-    if (!emailVerification.valid) {
-      console.log("Email không hợp lệ, lý do:", emailVerification.error);
-      return new ApiResponse(res)
-        .setStatus(400)
-        .setMessage(
-          emailVerification.error ||
-            "Địa chỉ email không tồn tại hoặc không hợp lệ"
-        )
-        .send();
-    }
+    // const emailVerification = await verifyEmailWithKickbox(email);
+    // if (!emailVerification.valid) {
+    //   console.log("Email không hợp lệ, lý do:", emailVerification.error);
+    //   return new ApiResponse(res)
+    //     .setStatus(400)
+    //     .setMessage(
+    //       emailVerification.error ||
+    //         "Địa chỉ email không tồn tại hoặc không hợp lệ"
+    //     )
+    //     .send();
+    // }
 
     if (password.length < 8) {
       return new ApiResponse(res)
@@ -125,7 +125,7 @@ export const signup = async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    const registrationToken = generateRandomToken();
+    const registrationToken = generateOTP();
     const tokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
     const newAccount = new Account({
@@ -138,8 +138,6 @@ export const signup = async (req, res) => {
 
     await newAccount.save();
     await sendConfirmationEmail(newAccount);
-
-    generateToken(newAccount._id, res);
 
     return new ApiResponse(res)
       .setStatus(201)
@@ -216,18 +214,25 @@ export const logout = (req, res) => {
 };
 
 export const confirmRegister = async (req, res) => {
-  const { token } = req.query;
+  const { email, otpCode } = req.body;
 
   try {
-    if (!token) {
+    if (!email) {
       return new ApiResponse(res)
         .setStatus(400)
-        .setMessage("Confirmation token is required")
+        .setMessage("Confirmation email is required")
+        .send();
+    }
+    if (!otpCode) {
+      return new ApiResponse(res)
+        .setStatus(400)
+        .setMessage("Confirmation otpCode is required")
         .send();
     }
 
     const account = await Account.findOne({
-      registration_token: token,
+      email: email,
+      registration_token: otpCode,
       registration_token_expiry: { $gt: new Date() },
     });
 
@@ -237,6 +242,8 @@ export const confirmRegister = async (req, res) => {
         .setMessage("Invalid or expired confirmation token")
         .send();
     }
+
+    generateToken(account._id, res);
 
     // Update account status and clear token
     account.status = 1;
@@ -313,7 +320,7 @@ export const forgotPassword = async (req, res) => {
         .send();
     }
 
-    const resetToken = generateRandomToken();
+    const resetToken = generateOTP();
     const tokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
     account.reset_password_token = resetToken;
@@ -390,6 +397,69 @@ export const checkAuth = (req, res) => {
     return new ApiResponse(res).setStatus(200).setData(req.account).send();
   } catch (error) {
     console.log("Error in checkAuth controller", error.message);
+    return new ApiResponse(res)
+      .setStatus(500)
+      .setMessage("Internal Server Error")
+      .send();
+  }
+};
+
+export const refreshOTP = async (req, res) => {
+  console.log("Req body: ", req.body);
+  if (!req.body) {
+    return new ApiResponse(res)
+      .setStatus(400)
+      .setMessage("Request body is missing")
+      .send();
+  }
+
+  const { email } = req.body;
+  console.log("email: ", email);
+
+  try {
+    if (!email) {
+      return new ApiResponse(res)
+        .setStatus(400)
+        .setMessage("Email is required")
+        .send();
+    }
+    if (!emailRegex.test(email)) {
+      return new ApiResponse(res)
+        .setStatus(400)
+        .setMessage("Invalid email format")
+        .send();
+    }
+
+    const account = await Account.findOne({ email });
+    if (!account) {
+      return new ApiResponse(res)
+        .setStatus(404)
+        .setMessage("Account not found")
+        .send();
+    }
+
+    if (!account.registration_token || !account.registration_token_expiry) {
+      return new ApiResponse(res)
+        .setStatus(400)
+        .setMessage("Account already verified or no pending verification")
+        .send();
+    }
+
+    const newOTP = generateOTP();
+    const newTokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    account.registration_token = newOTP;
+    account.registration_token_expiry = newTokenExpiry;
+
+    await account.save();
+    await sendConfirmationEmail(account);
+
+    return new ApiResponse(res)
+      .setStatus(200)
+      .setMessage("New OTP sent successfully")
+      .send();
+  } catch (error) {
+    console.log("Error in refreshOTP controller:", error.message);
     return new ApiResponse(res)
       .setStatus(500)
       .setMessage("Internal Server Error")

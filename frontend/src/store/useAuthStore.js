@@ -8,6 +8,8 @@ export const useAuthStore = create((set) => ({
   isLoggingIn: false,
   isLogingOut: false,
   isUpdatingProfile: false,
+  isVerifyingOTP: false,
+  isResendCooldown: false,
 
   isCheckingAuth: true,
   checkAuth: async () => {
@@ -46,6 +48,47 @@ export const useAuthStore = create((set) => ({
       console.log("Logout failed: " + error);
     } finally {
       set({ isLogingOut: false });
+    }
+  },
+  signup: async (data) => {
+    try {
+      const res = await axiosInstance.post("/auth/signup", data);
+      toast.success("Sign up successful! Please verify your email with OTP");
+      return res.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Signup failed";
+      console.log("ERROR: ", errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      set({ isSigningUp: false });
+    }
+  },
+  verifyOTP: async (data) => {
+    set({ isVerifyingOTP: true });
+    console.log("data", data);
+    try {
+      await axiosInstance.post("/auth/confirm-register", data);
+      toast.success("Verify OTP successfully! You can login now. ");
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Verify OTP failed";
+      console.log("ERROR: ", errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      set({ isVerifyingOTP: false });
+    }
+  },
+  refreshOTP: async (data) => {
+    set({ isResendCooldown: true });
+    console.log("data", data);
+    try {
+      await axiosInstance.post("/auth/refresh-otp", data);
+      toast.success("Verify OTP successfully! You can login now.");
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Verify OTP failed";
+      console.log("ERROR: ", errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      set({ isResendCooldown: false });
     }
   },
 }));
