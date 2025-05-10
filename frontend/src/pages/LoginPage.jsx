@@ -89,7 +89,7 @@ const LoginPage = () => {
               )}
             </div>
 
-            <div className="form-control relative ">
+            <div className="form-control relative">
               <label className="label">
                 <span className="label-text font-medium">Password</span>
               </label>
@@ -119,22 +119,29 @@ const LoginPage = () => {
               {errors.password && (
                 <p className="text-error text-sm absolute top-full left-0 mt-1 ml-2">{errors.password}</p>
               )}
+              <div className="text-right absolute right-0 bottom-0 translate-y-7">
+                <Link to="/forget-password" className="link link-primary no-underline">
+                  Forgot Password?
+                </Link>
+              </div>
             </div>
 
-            <div className="relative">
-              {errors.server && (
-                <p className=" absolute text-error text-sm mb-2 mt-[-1.4rem] ml-2">{errors.server}</p>
-              )}
-              <button type="submit" className="btn btn-primary w-full" disabled={isLoggingIn}>
-                {isLoggingIn ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  'Sign in'
+            <div >
+              <div className="relative mt-10">
+                {errors.server && (
+                  <p className="absolute text-error text-sm mb-2 mt-[-1.4rem] ml-2">{errors.server}</p>
                 )}
-              </button>
+                <button type="submit" className="btn btn-primary w-full" disabled={isLoggingIn}>
+                  {isLoggingIn ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    'Sign in'
+                  )}
+                </button>
+              </div>
             </div>
           </form>
 

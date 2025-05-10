@@ -2,25 +2,41 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { Loader2, Mail } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import toast from "react-hot-toast";
 
 const VerifyOTPPage = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
-  const [isResendCooldown, setIsResendCooldown] = useState(false);
-  const { isVerifyingOTP, verifyOTP, refreshOTP, checkAuth } = useAuthStore();
+  const [resendCooldown, setResendCooldown] = useState(0); // Lưu số giây đếm ngược
+  const { isVerifyingOTP, verifyOTP, refreshOTP, checkAuth, isResendCooldown } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const inputRefs = useRef([]);
 
   const email = location.state?.email || '';
-
+  const flow = location.state?.flow || '';
   useEffect(() => {
     if (!email) {
-      navigate('/signup');
+      if(!flow){
+        navigate('/login')
+      }else{
+      navigate(flow === 'forget-password' ? '/forget-password' : '/signup');
+      }
     }
     inputRefs.current[0]?.focus();
-  }, [email, navigate]);
+  }, [email, navigate, flow]);
+
+  // Đếm ngược số giây khi resendCooldown > 0
+  useEffect(() => {
+    let timer;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer); // Dọn dẹp interval
+  }, [resendCooldown]);
 
   const handleInputChange = (index, value) => {
     if (!/^\d*$/.test(value)) return;
@@ -33,7 +49,6 @@ const VerifyOTPPage = () => {
       inputRefs.current[index + 1].focus();
     }
 
-    // Xóa tất cả thông báo khi người dùng bắt đầu nhập lại
     setErrors({});
     setSuccessMessage('');
   };
@@ -55,9 +70,15 @@ const VerifyOTPPage = () => {
     try {
       setErrors({});
       setSuccessMessage('');
-      await verifyOTP({ email, otpCode });
-      await checkAuth();
-      navigate('/');
+      await verifyOTP({ email, otpCode, flow });
+      if (flow === 'signup') {
+        await checkAuth();
+        navigate('/');
+        toast.success("Verify OTP successfully! You can login now.");
+      } else if (flow === 'forget-password') {
+        navigate('/reset-password', { state: { email } });
+        toast.success("OTP verified! Please set a new password.");
+      }
     } catch (error) {
       const errorMessage = error.message || 'OTP verification failed';
       setErrors({ server: errorMessage });
@@ -65,15 +86,15 @@ const VerifyOTPPage = () => {
   };
 
   const handleResendOTP = async () => {
-    if (isResendCooldown) return;
 
+    if (resendCooldown > 0 || isResendCooldown) return;
+    setResendCooldown(30);
     try {
       setErrors({});
       setSuccessMessage('');
-      await refreshOTP({ email });
+      await refreshOTP({ email, flow });
       setSuccessMessage('New OTP sent to your email');
-      setIsResendCooldown(true);
-      setTimeout(() => setIsResendCooldown(false), 30000);
+      // Bắt đầu đếm ngược từ 30
     } catch (error) {
       const errorMessage = error.message || 'Failed to resend OTP';
       setErrors({ server: errorMessage });
@@ -96,7 +117,6 @@ const VerifyOTPPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-3 mb-6">
             <div className="form-control relative">
-
               <div className="flex justify-between gap-2">
                 {otp.map((digit, index) => (
                   <input
@@ -138,12 +158,12 @@ const VerifyOTPPage = () => {
               Didn't receive the OTP?{' '}
               <button
                 onClick={handleResendOTP}
-                className={`link link-primary ${isResendCooldown ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={isResendCooldown}
+                className={`link link-primary no-underline  ${resendCooldown > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={resendCooldown > 0}
               >
                 Resend OTP
               </button>
-              {isResendCooldown && <span className="text-sm ml-2">(Wait 30s)</span>}
+              {resendCooldown > 0 && <span className="text-sm ml-2">(Wait {resendCooldown}s)</span>}
             </p>
           </div>
         </div>

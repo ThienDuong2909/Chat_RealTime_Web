@@ -10,6 +10,8 @@ import {
   sendResetPassWordEmail,
 } from "../lib/email.service.js";
 import kickbox from "kickbox";
+import User from "../models/user.model.js";
+import { console } from "inspector";
 
 //
 
@@ -178,6 +180,7 @@ export const login = async (req, res) => {
     }
 
     generateToken(account._id, res);
+    const user = User.findOne({ account: account._id });
 
     return new ApiResponse(res)
       .setStatus(200)
@@ -186,6 +189,7 @@ export const login = async (req, res) => {
         _id: account._id,
         username: account.username,
         email: account.email,
+        fullName: user.fullName,
       })
       .send();
   } catch (error) {
@@ -271,7 +275,62 @@ export const confirmRegister = async (req, res) => {
   }
 };
 
+export const confirmForgotPassword = async (req, res) => {
+  const { email, otpCode } = req.body;
+
+  try {
+    if (!email) {
+      return new ApiResponse(res)
+        .setStatus(400)
+        .setMessage("Confirmation email is required")
+        .send();
+    }
+    if (!otpCode) {
+      return new ApiResponse(res)
+        .setStatus(400)
+        .setMessage("Confirmation otpCode is required")
+        .send();
+    }
+
+    const account = await Account.findOne({
+      email: email,
+      reset_password_token: otpCode,
+      reset_password_token_expiry: { $gt: new Date() },
+    });
+
+    if (!account) {
+      return new ApiResponse(res)
+        .setStatus(400)
+        .setMessage("Invalid or expired confirmation token")
+        .send();
+    }
+
+    account.registration_token = null;
+    account.registration_token_expiry = null;
+
+    await account.save();
+
+    return new ApiResponse(res)
+      .setStatus(200)
+      .setData({
+        _id: account._id,
+        username: account.username,
+        email: account.email,
+        status: account.status,
+      })
+      .setMessage("Email confirmation successful")
+      .send();
+  } catch (error) {
+    console.log("Error in confirmForgotPassword controller:", error.message);
+    return new ApiResponse(res)
+      .setStatus(500)
+      .setMessage("Internal Server Error")
+      .send();
+  }
+};
+
 export const forgotPassword = async (req, res) => {
+  console.log("Request forgot password: ", req.body);
   const { email } = req.body;
 
   try {
@@ -296,15 +355,6 @@ export const forgotPassword = async (req, res) => {
         .setMessage("Email domain does not exist or is invalid")
         .send();
     }
-
-    const isEmailValid = await verifyEmailWithZeroBounce(email);
-    if (!isEmailValid) {
-      return new ApiResponse(res)
-        .setStatus(400)
-        .setMessage("Email address does not exist or is invalid")
-        .send();
-    }
-
     const account = await Account.findOne({ email });
     if (!account) {
       return new ApiResponse(res)
@@ -342,13 +392,13 @@ export const forgotPassword = async (req, res) => {
 };
 
 export const resetPassword = async (req, res) => {
-  const { token, password } = req.body;
+  const { email, password } = req.body;
 
   try {
-    if (!token || !password) {
+    if (!email || !password) {
       return new ApiResponse(res)
         .setStatus(400)
-        .setMessage("Token and new password are required")
+        .setMessage("Email and new password are required")
         .send();
     }
 
@@ -360,8 +410,7 @@ export const resetPassword = async (req, res) => {
     }
 
     const account = await Account.findOne({
-      reset_password_token: token,
-      reset_password_token_expiry: { $gt: new Date() },
+      email: email,
     });
 
     if (!account) {
@@ -375,8 +424,6 @@ export const resetPassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     account.password = hashedPassword;
-    account.reset_password_token = null;
-    account.reset_password_token_expiry = null;
     await account.save();
 
     return new ApiResponse(res)
@@ -394,6 +441,8 @@ export const resetPassword = async (req, res) => {
 
 export const checkAuth = (req, res) => {
   try {
+    const user = User.findOne({ account: req.account._id });
+    console.log("User", user);
     return new ApiResponse(res).setStatus(200).setData(req.account).send();
   } catch (error) {
     console.log("Error in checkAuth controller", error.message);
@@ -413,7 +462,7 @@ export const refreshOTP = async (req, res) => {
       .send();
   }
 
-  const { email } = req.body;
+  const { email, flow } = req.body;
   console.log("email: ", email);
 
   try {
@@ -438,22 +487,42 @@ export const refreshOTP = async (req, res) => {
         .send();
     }
 
-    if (!account.registration_token || !account.registration_token_expiry) {
-      return new ApiResponse(res)
-        .setStatus(400)
-        .setMessage("Account already verified or no pending verification")
-        .send();
+    if (flow == "signup") {
+      if (!account.registration_token || !account.registration_token_expiry) {
+        return new ApiResponse(res)
+          .setStatus(400)
+          .setMessage("Account already verified or no pending verification")
+          .send();
+      }
+
+      const newOTP = generateOTP();
+      const newTokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+      account.registration_token = newOTP;
+      account.registration_token_expiry = newTokenExpiry;
+
+      await account.save();
+      await sendConfirmationEmail(account);
+    } else {
+      if (
+        !account.reset_password_token ||
+        !account.reset_password_token_expiry
+      ) {
+        return new ApiResponse(res)
+          .setStatus(400)
+          .setMessage("Account already verified or no pending verification")
+          .send();
+      }
+
+      const newOTP = generateOTP();
+      const newTokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+      account.reset_password_token = newOTP;
+      account.reset_password_token_expiry = newTokenExpiry;
+
+      await account.save();
+      await sendResetPassWordEmail(account);
     }
-
-    const newOTP = generateOTP();
-    const newTokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
-
-    account.registration_token = newOTP;
-    account.registration_token_expiry = newTokenExpiry;
-
-    await account.save();
-    await sendConfirmationEmail(account);
-
     return new ApiResponse(res)
       .setStatus(200)
       .setMessage("New OTP sent successfully")

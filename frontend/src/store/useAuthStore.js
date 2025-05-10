@@ -2,6 +2,7 @@ import { Check } from "lucide-react";
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
+
 export const useAuthStore = create((set) => ({
   authUser: null,
   isSigningUp: false,
@@ -10,7 +11,8 @@ export const useAuthStore = create((set) => ({
   isUpdatingProfile: false,
   isVerifyingOTP: false,
   isResendCooldown: false,
-
+  isRequestingPasswordReset: false,
+  isResettingPassword: false,
   isCheckingAuth: true,
   checkAuth: async () => {
     try {
@@ -44,6 +46,7 @@ export const useAuthStore = create((set) => ({
     try {
       await axiosInstance.post("/auth/logout");
       set({ authUser: null });
+      toast.error("You have been logout ");
     } catch (error) {
       console.log("Logout failed: " + error);
     } finally {
@@ -63,12 +66,16 @@ export const useAuthStore = create((set) => ({
       set({ isSigningUp: false });
     }
   },
-  verifyOTP: async (data) => {
+  verifyOTP: async ({ email, otpCode, flow }) => {
     set({ isVerifyingOTP: true });
-    console.log("data", data);
+    console.log("data", { email, otpCode, flow });
+    let path =
+      flow == "signup"
+        ? "/auth/confirm-register"
+        : "/auth/confirm-forgot-password";
+
     try {
-      await axiosInstance.post("/auth/confirm-register", data);
-      toast.success("Verify OTP successfully! You can login now. ");
+      await axiosInstance.post(path, { email, otpCode });
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Verify OTP failed";
       console.log("ERROR: ", errorMessage);
@@ -82,13 +89,36 @@ export const useAuthStore = create((set) => ({
     console.log("data", data);
     try {
       await axiosInstance.post("/auth/refresh-otp", data);
-      toast.success("Verify OTP successfully! You can login now.");
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Verify OTP failed";
       console.log("ERROR: ", errorMessage);
       throw new Error(errorMessage);
     } finally {
       set({ isResendCooldown: false });
+    }
+  },
+  requestPasswordReset: async (data) => {
+    set({ isRequestingPasswordReset: true });
+    try {
+      await axiosInstance.post("/auth/forgot-password", { email: data });
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Request failed";
+      console.log("ERROR: ", errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      set({ isResendCooldown: false });
+    }
+  },
+  resetPassword: async (data) => {
+    set({ isResettingPassword: true });
+    try {
+      await axiosInstance.post("/auth/reset-password", data);
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Request failed";
+      console.log("ERROR: ", errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      set({ isResettingPassword: false });
     }
   },
 }));

@@ -8,7 +8,8 @@ import HomePage from "./pages/HomePage";
 import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
 import SettingPage from "./pages/SettingPage";
-
+import ForgetPasswordPage from "./pages/ForgetPasswordPage"
+import ResetPasswordPage from "./pages/ResetPasswordPage"
 import ProfilePage from "./pages/ProfilePage";
 import { useAuthStore } from './store/useAuthStore';
 import VerifyOTPPage from './pages/VerifyOTPPage';
@@ -34,8 +35,10 @@ if (isChecking && !authUser)
         <Route path='/signup' element={!authUser ? <SignUpPage /> : <Navigate to="/" />}></Route>
         <Route path='/login' element={!authUser ? <LoginPage /> : <Navigate to="/" />}></Route>
         <Route path="/verify-otp" element={!authUser ? <VerifyOTPPage /> : <Navigate to="/" />} />
+        <Route path="/forget-password" element={!authUser ? <ForgetPasswordPage /> : <Navigate to="/" />} />
+        <Route path="/reset-password" element={!authUser ? <ResetPasswordPage /> : <Navigate to="/" />} />
         <Route path='/settings' element={<SettingPage/>}></Route>
-        <Route path='/profile' element={authUser ? <HomePage /> : <Navigate to="/login" />}></Route>
+        <Route path='/profile' element={authUser ? <ProfilePage /> : <Navigate to="/login" />}></Route>
       </Routes>
       <Toaster/>
     </div>
