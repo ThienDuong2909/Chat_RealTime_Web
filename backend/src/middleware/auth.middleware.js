@@ -26,13 +26,6 @@ export const protectRoute = async (req, res, next) => {
       return res.status(404).json({ message: "Account not found" });
     }
 
-    const user = User.findOne({ account: account._id });
-    const info = {
-      ...account,
-      fullName: user.fullName,
-    };
-
-    console.log("info", info);
     req.account = account;
 
     next();

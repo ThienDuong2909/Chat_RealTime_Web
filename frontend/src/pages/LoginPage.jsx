@@ -14,8 +14,6 @@ const LoginPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-
-    // Kiểm tra username
     if (!formData.username.trim()) {
       newErrors.username = 'Username is required';
     } else if (formData.username.length < 3) {

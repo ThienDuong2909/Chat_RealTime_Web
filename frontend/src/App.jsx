@@ -13,25 +13,34 @@ import ResetPasswordPage from "./pages/ResetPasswordPage"
 import ProfilePage from "./pages/ProfilePage";
 import { useAuthStore } from './store/useAuthStore';
 import VerifyOTPPage from './pages/VerifyOTPPage';
+import { useThemeStore } from './store/useThemeStore';
 
 const App = () => {
-  const {authUser, checkAuth, isChecking} = useAuthStore();
+  const {authUser, checkAuth, isCheckingAuth} = useAuthStore();
+  const {theme} = useThemeStore();
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
-
-console.log("AuthUser: ", authUser)
-if (isChecking && !authUser)
+if (isCheckingAuth && !authUser)
   return (
     <div className="flex items-center justify-center h-screen">
       <Loader className="size-10 animate-spin" />
     </div>
   );
   return (
-    <div>
+    <div data-theme={theme}>
       <Navbar/>
       <Routes>
-        <Route path='/' element={authUser ? <HomePage /> : <Navigate to="/login" />}></Route>
+       <Route
+          path='/'
+          element={
+            authUser
+              ? (authUser.data.fullName == null || authUser.data.fullName === '')
+                ? <Navigate to="/profile" />
+                : <HomePage />
+              : <Navigate to="/login" />
+          }
+        />
         <Route path='/signup' element={!authUser ? <SignUpPage /> : <Navigate to="/" />}></Route>
         <Route path='/login' element={!authUser ? <LoginPage /> : <Navigate to="/" />}></Route>
         <Route path="/verify-otp" element={!authUser ? <VerifyOTPPage /> : <Navigate to="/" />} />

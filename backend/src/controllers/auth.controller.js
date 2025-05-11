@@ -180,7 +180,7 @@ export const login = async (req, res) => {
     }
 
     generateToken(account._id, res);
-    const user = User.findOne({ account: account._id });
+    const user = await User.findOne({ account: account._id });
 
     return new ApiResponse(res)
       .setStatus(200)
@@ -189,7 +189,7 @@ export const login = async (req, res) => {
         _id: account._id,
         username: account.username,
         email: account.email,
-        fullName: user.fullName,
+        fullName: user.fullName || null,
       })
       .send();
   } catch (error) {
@@ -439,11 +439,15 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-export const checkAuth = (req, res) => {
+export const checkAuth = async (req, res) => {
   try {
-    const user = User.findOne({ account: req.account._id });
-    console.log("User", user);
-    return new ApiResponse(res).setStatus(200).setData(req.account).send();
+    const user = await User.findOne({ account: req.account._id });
+    const responseData = {
+      ...req.account._doc,
+      fullName: user.fullName,
+      avatar: user.avatar,
+    };
+    return new ApiResponse(res).setStatus(200).setData(responseData).send();
   } catch (error) {
     console.log("Error in checkAuth controller", error.message);
     return new ApiResponse(res)
