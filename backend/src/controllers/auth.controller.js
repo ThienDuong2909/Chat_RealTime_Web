@@ -189,14 +189,14 @@ export const login = async (req, res) => {
         _id: account._id,
         username: account.username,
         email: account.email,
-        fullName: user.fullName || null,
+        fullName: user?.fullName,
       })
       .send();
   } catch (error) {
     console.log("Error in login controller", error.message);
     return new ApiResponse(res)
       .setStatus(500)
-      .setMessage("Internal Server Error")
+      .setMessage("Internal Server Error:" + error)
       .send();
   }
 };
@@ -219,6 +219,7 @@ export const logout = (req, res) => {
 
 export const confirmRegister = async (req, res) => {
   const { email, otpCode } = req.body;
+  console.log("Email, OtpCode: " + email + ", " + otpCode);
 
   try {
     if (!email) {
@@ -277,6 +278,7 @@ export const confirmRegister = async (req, res) => {
 
 export const confirmForgotPassword = async (req, res) => {
   const { email, otpCode } = req.body;
+  console.log("Email, OTPcode:", email, otpCode);
 
   try {
     if (!email) {
@@ -444,8 +446,9 @@ export const checkAuth = async (req, res) => {
     const user = await User.findOne({ account: req.account._id });
     const responseData = {
       ...req.account._doc,
-      fullName: user.fullName,
-      avatar: user.avatar,
+      fullName: user ? user.fullName : null,
+      avatar: user ? user.avatar : null,
+      userId: user._id,
     };
     return new ApiResponse(res).setStatus(200).setData(responseData).send();
   } catch (error) {
@@ -490,6 +493,7 @@ export const refreshOTP = async (req, res) => {
         .setMessage("Account not found")
         .send();
     }
+    console.log("account", account);
 
     if (flow == "signup") {
       if (!account.registration_token || !account.registration_token_expiry) {

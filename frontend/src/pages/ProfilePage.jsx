@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useUserStore } from "../store/useUserStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { Camera, Mail, User, Shuffle, Edit, Check } from "lucide-react";
+import { Camera, Mail, User, Edit, Check,LoaderCircle  } from "lucide-react";
 import { TygerAvatar } from 'tyger-avatar';
 import toast from 'react-hot-toast';
 import 'tyger-avatar/lib/bundle/styles.css';
@@ -9,7 +9,7 @@ import 'tyger-avatar/lib/bundle/styles.css';
 // Simple debounce function
 const ProfilePage = () => {
   const { authUser } = useAuthStore();
-  const { isUpadatingAvatar, updateFullname, updateAvatar } = useUserStore();
+  const { isUpadatingAvatar,isUpadatingFullname, updateFullname, updateAvatar } = useUserStore();
   const [selectedImg, setSelectedImg] = useState(null);
   const [isEditingFullName, setIsEditingFullName] = useState(false);
   const [fullNameInput, setFullNameInput] = useState(authUser?.data?.fullName || '');
@@ -85,15 +85,22 @@ const ProfilePage = () => {
   };
 
   const handleSaveFullName = async () => {
-    if (fullNameInput.trim() === '') {
-      toast.error('Full name cannot be empty');
-      return;
-    }
+    const trimmedInput = fullNameInput.trim();
+  const currentFullName = authUser?.data?.fullName?.trim() || '';
 
+  if (trimmedInput === '') {
+    toast.error('Full name cannot be empty');
+    return;
+  }
+
+  if (trimmedInput === currentFullName) {
+    setIsEditingFullName(false);
+    return;
+  }
     try {
-      await updateFullname({ fullName: fullNameInput.trim() });
+      await updateFullname({ fullName: trimmedInput });
       toast.success('Full name updated successfully');
-      setNameLabel(fullNameInput.trim())
+      setNameLabel(trimmedInput)
       setIsEditingFullName(false);
     } catch (error) {
       toast.error('Failed to update full name:'+ error);
@@ -172,10 +179,14 @@ const ProfilePage = () => {
                 <button
                   onClick={isEditingFullName ? handleSaveFullName : handleEditFullName}
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 rounded-full hover:bg-base-100 transition-all duration-200"
-                  disabled={isUpadatingAvatar}
+                  disabled={isUpadatingAvatar || isUpadatingFullname}
                 >
                   {isEditingFullName ? (
-                    <Check className="w-4 h-4 text-base-content" />
+                    isUpadatingFullname ? (
+                      <LoaderCircle className="w-4 h-4 text-base-content animate-spin" />
+                    ) : (
+                      <Check className="w-4 h-4 text-base-content" />
+                    )
                   ) : (
                     <Edit className="w-4 h-4 text-base-content" />
                   )}

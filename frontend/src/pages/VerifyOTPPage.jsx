@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { Loader2, Mail } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from "react-hot-toast";
-
+import AuthImagePattern from '../components/AuthImgPattern';
 const VerifyOTPPage = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [errors, setErrors] = useState({});
@@ -16,6 +16,8 @@ const VerifyOTPPage = () => {
 
   const email = location.state?.email || '';
   const flow = location.state?.flow || '';
+console.log("flow in verify page 1: ", flow)
+
   useEffect(() => {
     if (!email) {
       if(!flow){
@@ -70,6 +72,8 @@ const VerifyOTPPage = () => {
     try {
       setErrors({});
       setSuccessMessage('');
+      console.log("flow in verify page: ", flow)
+
       await verifyOTP({ email, otpCode, flow });
       if (flow === 'signup') {
         await checkAuth();
@@ -168,6 +172,10 @@ const VerifyOTPPage = () => {
           </div>
         </div>
       </div>
+      <AuthImagePattern
+        title="Verify your identity"
+        subtitle="Enter the code we sent to your email to continue resetting your password."
+        />
     </div>
   );
 };

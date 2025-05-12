@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, Mail, MessageSquare } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
-
+import AuthImagePattern from '../components/AuthImgPattern';
 const ForgetPasswordPage = () => {
   const [formData, setFormData] = useState({
     email: '',
@@ -107,6 +107,10 @@ const ForgetPasswordPage = () => {
           </div>
         </div>
       </div>
+      <AuthImagePattern
+        title="Reset your password"
+        subtitle="Don’t worry! We’ll help you recover access to your account quickly and securely."
+        />
     </div>
   );
 };

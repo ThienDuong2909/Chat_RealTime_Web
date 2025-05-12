@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, Lock, MessageSquare } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
-
+import AuthImagePattern from '../components/AuthImgPattern';
 const ResetPasswordPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -163,6 +163,10 @@ const ResetPasswordPage = () => {
           </div>
         </div>
       </div>
+      <AuthImagePattern
+        title="Set a new password"
+        subtitle="Create a strong password to secure your account and get back on track."
+        />
     </div>
   );
 };

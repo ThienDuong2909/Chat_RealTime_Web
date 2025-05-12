@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { Eye, EyeOff, Loader2, Lock, Mail, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-
+import AuthImagePattern from '../components/AuthImgPattern';
 const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -60,7 +60,7 @@ const SignUpPage = () => {
         email: formData.email,
         password: formData.password,
       });
-      navigate('/verify-otp', { state: { email: formData.email, flow: 'signin' } });
+      navigate('/verify-otp', { state: { email: formData.email, flow: 'signup' } });
 
     } catch (error) {
       const errorMessage = error.message || 'Signup failed';
@@ -216,6 +216,10 @@ const SignUpPage = () => {
           </div>
         </div>
       </div>
+      <AuthImagePattern
+        title="Join our community"
+        subtitle="Connect with friends, share moments, and stay in touch with your loved ones."
+        />
     </div>
   );
 };

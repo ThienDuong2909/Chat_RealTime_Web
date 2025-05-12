@@ -4,10 +4,10 @@ import { connectDB } from "./lib/db.js";
 import route from "./routes/index.route.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import { app, server } from "./lib/socket.js";
 
 dotenv.config();
 
-const app = express();
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 app.use(cookieParser());
@@ -20,9 +20,7 @@ app.use(
 const PORT = process.env.PORT;
 
 app.use("/api", route);
-app
-  .listen(PORT, () => {
-    console.log("Server is opening on " + PORT);
-    connectDB();
-  })
-  .setTimeout(60000);
+server.listen(PORT, () => {
+  console.log("Server is opening on " + PORT);
+  connectDB();
+});
