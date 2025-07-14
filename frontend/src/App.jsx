@@ -14,6 +14,7 @@ import ProfilePage from "./pages/ProfilePage";
 import { useAuthStore } from './store/useAuthStore';
 import VerifyOTPPage from './pages/VerifyOTPPage';
 import { useThemeStore } from './store/useThemeStore';
+import VideoCallPage from './pages/VideoCallPage';
 
 const App = () => {
   const {authUser, checkAuth, isCheckingAuth} = useAuthStore();
@@ -48,9 +49,13 @@ if (isCheckingAuth && !authUser)
         <Route path="/reset-password" element={!authUser ? <ResetPasswordPage /> : <Navigate to="/" />} />
         <Route path='/settings' element={<SettingPage/>}></Route>
         <Route path='/profile' element={authUser ? <ProfilePage /> : <Navigate to="/login" />}></Route>
+        <Route path="/video-call" element={<VideoCallPage />} />
       </Routes>
       <Toaster/>
     </div>
+    // <div className="flex bg-gray-100 min-h-screen">
+    //   <HomePage />
+    // </div>
   )
 }
 

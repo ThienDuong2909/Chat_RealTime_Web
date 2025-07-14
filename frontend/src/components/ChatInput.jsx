@@ -42,8 +42,11 @@ const handleImageChange = (e) => {
   const handleSendMessage = async(e)=>{
       e.preventDefault();
       console.log("imagePreviews", imagePreviews)
+      
 
     if (!text.trim() && imagePreviews.length === 0) return;
+    setText("");
+    setImagePreviews([]);
 
     try {
       await sendMessage({
@@ -51,8 +54,7 @@ const handleImageChange = (e) => {
         images: imagePreviews, 
       });
 
-      setText("");
-      setImagePreviews([]);
+      
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       console.error("Failed to send message:", error);

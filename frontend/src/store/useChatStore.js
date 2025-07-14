@@ -9,6 +9,7 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+  isSendingMessage: false,
   onlineUsers: [],
 
   getListUsers: async () => {
@@ -28,6 +29,8 @@ export const useChatStore = create((set, get) => ({
     set({ isMessagesLoading: true });
     try {
       const res = await axiosInstance.get(`/message/get-messages/${user._id}`);
+      console.log("Messages: ", res.data.data);
+
       set({ messages: res.data.data });
     } catch (error) {
       toast.error(error.response.data.message);
@@ -37,16 +40,38 @@ export const useChatStore = create((set, get) => ({
   },
   sendMessage: async (messageData) => {
     const { selectedUser, messages } = get();
-    console.log("selectedUser", selectedUser);
+    const tempId = Date.now().toString(); // Tạo ID tạm
+
+    const tempMessage = {
+      _id: tempId,
+      senderId: useAuthStore.getState().authUser.data.userId,
+      text: messageData.text,
+      images: messageData.images, // base64 tạm
+      createdAt: new Date().toISOString(),
+      status: "sending",
+    };
+
+    set({ messages: [...messages, tempMessage] });
+    set({ isSendingMessage: true });
+
     try {
       const res = await axiosInstance.post(
         `/message/send-message/${selectedUser._id}`,
         messageData
       );
-      console.log("res", res);
-      set({ messages: [...messages, res.data.data] });
+
+      const newMessageFromServer = res.data.data;
+      newMessageFromServer.tempImages = messageData.images;
+
+      const newMessages = get().messages.map((msg) =>
+        msg._id === tempId ? newMessageFromServer : msg
+      );
+
+      set({ messages: newMessages });
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Failed to send message");
+    } finally {
+      set({ isSendingMessage: false });
     }
   },
   setSelectedUser: (selectedUser) => set({ selectedUser }),

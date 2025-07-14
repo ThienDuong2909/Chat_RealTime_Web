@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { type } from "os";
 
 const accountSchema = new mongoose.Schema(
   {
@@ -13,7 +14,6 @@ const accountSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
       minlength: 8,
     },
     registration_token: {

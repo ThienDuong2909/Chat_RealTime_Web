@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, Lock, MessageSquare, User } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, MessageSquare, User, Cloudy } from 'lucide-react';
+import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
+
 import { useAuthStore } from '../store/useAuthStore';
 import AuthImagePattern from '../components/AuthImgPattern';
+
+
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -11,7 +16,7 @@ const LoginPage = () => {
     password: '',
   });
   const [errors, setErrors] = useState({});
-  const { isLoggingIn, login } = useAuthStore();
+  const { isLoggingIn, login, loginWithGoogle } = useAuthStore();
 
   const validateForm = () => {
     const newErrors = {};
@@ -45,6 +50,18 @@ const LoginPage = () => {
       setErrors({ server: errorMessage }); 
     }
   };
+  const handleGoogleLoginSuccess = async (credentialResponse) => {
+  try {
+    const { credential } = credentialResponse;
+    console.log(credential)
+    await loginWithGoogle(credential);
+
+  } catch (err) {
+    console.error(err);
+    setErrors({ server: err.message || "Google login failed" });
+  }
+};
+
 
   return (
     <div className="h-screen grid lg:grid-cols-2">
@@ -58,7 +75,7 @@ const LoginPage = () => {
                 className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20
                 transition-colors"
               >
-                <MessageSquare className="w-6 h-6 text-primary" />
+                <Cloudy className="w-6 h-6 text-primary" />
               </div>
               <h1 className="text-2xl font-bold mt-2">Welcome Back</h1>
               <p className="text-base-content/60">Sign in to your account</p>
@@ -140,6 +157,17 @@ const LoginPage = () => {
                     'Sign in'
                   )}
                 </button>
+                <div className="mt-4">
+                <GoogleOAuthProvider clientId="329726609553-0v2id8560hjcs1c30ho1fbo7lkt2nj4b.apps.googleusercontent.com">
+                  <GoogleLogin
+                    onSuccess={handleGoogleLoginSuccess}
+                    onError={() => {
+                      setErrors({ server: 'Google login failed' });
+                    }}
+                  />
+                </GoogleOAuthProvider>
+              </div>
+
               </div>
             </div>
           </form>

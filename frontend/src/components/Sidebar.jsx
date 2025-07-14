@@ -1,15 +1,19 @@
 import React, { useEffect } from 'react'
 import { useChatStore } from '../store/useChatStore';
 import SidebarSkeleton from './skeleton/SidebarSkeleton';
+import { useAuthStore } from '../store/useAuthStore';
 
 const Sidebar = () => {
-    const {onlineUsers, getListUsers, users, setSelectedUser, selectedUser, isUsersLoading} = useChatStore();
+    const { getListUsers, users, setSelectedUser, selectedUser, isUsersLoading} = useChatStore();
+
+    const {onlineUsers} = useAuthStore();
 
     useEffect(()=>{
         getListUsers()
-    },[getListUsers])
+    },[getListUsers, onlineUsers])
     
     const filteredUsers = Array.isArray(users) ? users : [];
+    console.log("onlineUsers", onlineUsers)
 
     if (isUsersLoading) 
       return <SidebarSkeleton />;
@@ -18,6 +22,7 @@ const Sidebar = () => {
     <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
       <div className="overflow-y-auto w-full py-3">
         {filteredUsers.map((user) => (
+          
           <button
             key={user._id}
             onClick={() => setSelectedUser(user)}

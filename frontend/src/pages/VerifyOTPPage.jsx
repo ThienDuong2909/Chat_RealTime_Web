@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
-import { Loader2, Mail } from 'lucide-react';
+import { Loader2, Mail, Cloudy } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from "react-hot-toast";
 import AuthImagePattern from '../components/AuthImgPattern';
@@ -112,7 +112,7 @@ console.log("flow in verify page 1: ", flow)
           <div className="text-center">
             <div className="flex flex-col items-center group space-y-2">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                <Mail className="w-6 h-6 text-primary" />
+                <Cloudy className="w-6 h-6 text-primary" />
               </div>
               <h1 className="text-2xl font-bold">Verify OTP</h1>
               <p className="text-base-content/60">Enter the 6-digit code sent to {email}</p>

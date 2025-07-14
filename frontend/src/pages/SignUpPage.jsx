@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
-import { Eye, EyeOff, Loader2, Lock, Mail, User } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, Mail, User, Cloudy } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthImagePattern from '../components/AuthImgPattern';
 const SignUpPage = () => {
@@ -191,7 +191,7 @@ const SignUpPage = () => {
 
             <div className="relative">
               {errors.server && (
-                <p className="absolute text-error text-sm mb-2 mt-[-1.4rem] ml-2">{errors.server}</p>
+                <p className="absolute text-error text-sm mb-2 mt-[-0.8rem] ml-2">{errors.server}</p>
               )}
               <button type="submit" className="btn btn-primary w-full mt-3" disabled={isLoading}>
                 {isLoading ? (

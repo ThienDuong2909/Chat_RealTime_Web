@@ -27,7 +27,6 @@ io.on("connection", (socket) => {
 
   console.log("getReceiverSocketId", getReceiverSocketId(userId));
 
-  // io.emit() is used to send events to all the connected clients
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
   socket.on("disconnect", () => {

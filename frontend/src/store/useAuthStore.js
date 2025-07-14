@@ -24,6 +24,9 @@ export const useAuthStore = create((set, get) => ({
     try {
       const res = await axiosInstance.get("/auth/check");
       set({ authUser: res.data });
+      if (res.data) {
+        get().connectSocket();
+      }
       console.log("authUser::", res.data);
     } catch (error) {
       console.log("Error in checkAuth:", error);
@@ -48,6 +51,28 @@ export const useAuthStore = create((set, get) => ({
       set({ isLoggingIn: false });
     }
   },
+  loginWithGoogle: async (credential) => {
+    set({ isLoggingIn: true });
+    try {
+      const res = await axiosInstance.post("/auth/google-login", {
+        credential,
+      });
+
+      await get().checkAuth();
+      get().connectSocket();
+
+      return res.data;
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || "Google login failed";
+      console.log("ERROR: ", errorMessage);
+      set({ authUser: null });
+      throw new Error(errorMessage);
+    } finally {
+      set({ isLoggingIn: false });
+    }
+  },
+
   logout: async () => {
     set({ isLogingOut: true });
     try {
@@ -135,9 +160,8 @@ export const useAuthStore = create((set, get) => ({
   connectSocket: async () => {
     const { authUser } = get();
 
-    console.log("authUser.data._id", authUser.data._id);
-
     if (!authUser || get().socket?.connected) return;
+    console.log("authUser.data._id", authUser?.data._id);
 
     const socket = io(BASE_URL, {
       query: {
@@ -155,7 +179,7 @@ export const useAuthStore = create((set, get) => ({
     socket.on("getOnlineUsers", (userIds) => {
       set({ onlineUsers: userIds });
     });
-    console.log(useAuthStore.getState().onlineUsers);
+    console.log("Online users:", useAuthStore.getState().onlineUsers);
   },
   disconnectSocket: () => {
     if (get().socket?.connected) get().socket.disconnect();

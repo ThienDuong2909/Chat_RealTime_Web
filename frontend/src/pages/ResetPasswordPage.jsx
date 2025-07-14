@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, Lock, MessageSquare } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, MessageSquare, Cloudy } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
 import AuthImagePattern from '../components/AuthImgPattern';
+
+
 const ResetPasswordPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -64,7 +66,7 @@ const ResetPasswordPage = () => {
           <div className="text-center mb-8">
             <div className="flex flex-col items-center gap-2 group">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                <MessageSquare className="w-6 h-6 text-primary" />
+                <Cloudy className="w-6 h-6 text-primary" />
               </div>
               <h1 className="text-2xl font-bold mt-2">Set New Password</h1>
               <p className="text-base-content/60">Enter your new password for {email}</p>

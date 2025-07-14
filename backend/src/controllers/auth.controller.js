@@ -1,5 +1,6 @@
 import ApiResponse from "../lib/apiResponse.js";
 import bcrypt from "bcryptjs";
+import { jwtDecode } from "jwt-decode";
 import crypto from "crypto";
 import dns from "dns";
 import { promisify } from "util";
@@ -117,11 +118,13 @@ export const signup = async (req, res) => {
         .send();
     }
 
-    const user = await Account.findOne({ email });
+    const user = await Account.findOne({
+      $or: [{ email: email }, { username: username }],
+    });
     if (user) {
       return new ApiResponse(res)
         .setStatus(400)
-        .setMessage("Email already exists")
+        .setMessage("Email or username already exists")
         .send();
     }
 
@@ -448,14 +451,14 @@ export const checkAuth = async (req, res) => {
       ...req.account._doc,
       fullName: user ? user.fullName : null,
       avatar: user ? user.avatar : null,
-      userId: user._id,
+      userId: user ? user._id : null,
     };
     return new ApiResponse(res).setStatus(200).setData(responseData).send();
   } catch (error) {
     console.log("Error in checkAuth controller", error.message);
     return new ApiResponse(res)
       .setStatus(500)
-      .setMessage("Internal Server Error")
+      .setMessage("Internal Server Error: " + error)
       .send();
   }
 };
@@ -537,6 +540,65 @@ export const refreshOTP = async (req, res) => {
       .send();
   } catch (error) {
     console.log("Error in refreshOTP controller:", error.message);
+    return new ApiResponse(res)
+      .setStatus(500)
+      .setMessage("Internal Server Error")
+      .send();
+  }
+};
+
+export const loginWithGoogle = async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      return new ApiResponse(res)
+        .setStatus(400)
+        .setMessage("Missing Google credential")
+        .send();
+    }
+
+    const decoded = jwtDecode(credential);
+    const { email } = decoded;
+
+    if (!email) {
+      return new ApiResponse(res)
+        .setStatus(400)
+        .setMessage("Email not found in Google token")
+        .send();
+    }
+
+    let account = await Account.findOne({ email });
+
+    if (!account) {
+      const username = email.split("@")[0];
+
+      account = new Account({
+        username,
+        email,
+        password: null,
+        status: true,
+      });
+
+      await account.save();
+    }
+
+    generateToken(account._id, res);
+
+    const user = await User.findOne({ account: account._id });
+
+    return new ApiResponse(res)
+      .setStatus(200)
+      .setMessage("Login successful via Google")
+      .setData({
+        _id: account._id,
+        username: account.username,
+        email: account.email,
+        fullName: user?.fullName,
+      })
+      .send();
+  } catch (error) {
+    console.log("Error in loginWithGoogle:", error.message);
     return new ApiResponse(res)
       .setStatus(500)
       .setMessage("Internal Server Error")
